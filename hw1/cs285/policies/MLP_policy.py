@@ -55,7 +55,8 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             self.mean_net = ptu.build_mlp(
                 input_size=self.ob_dim,
                 output_size=self.ac_dim,
-                n_layers=self.n_layers, size=self.size,
+                n_layers=self.n_layers,
+                size=self.size,
             )
             self.mean_net.to(ptu.device)
             self.logstd = nn.Parameter(
@@ -85,6 +86,8 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
+        # don't use get_action. Use self.forward, which doesn't return a numpy
+        # array (so gradients can indeed flow)
         raise NotImplementedError
 
     # This function defines the forward pass of the network.
@@ -93,12 +96,14 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor) -> Any:
+        # perhaps normal.rsample()
         raise NotImplementedError
 
 
 #####################################################
 #####################################################
 
+# multilayer perceptron supervised learning
 class MLPPolicySL(MLPPolicy):
     def __init__(self, ac_dim, ob_dim, n_layers, size, **kwargs):
         super().__init__(ac_dim, ob_dim, n_layers, size, **kwargs)
@@ -108,6 +113,14 @@ class MLPPolicySL(MLPPolicy):
             self, observations, actions,
             adv_n=None, acs_labels_na=None, qvals=None
     ):
+        # actions = true action (taken by the expert). Need to conver to pytorch tensor
+        # pred_actions we get from calling our forward function on the observations
+
+
+        # don't use get_action. Use self.forward, which doesn't return a numpy
+        # array (so gradients can indeed flow)
+
+
         # TODO: update the policy and return the loss
         loss = TODO
         return {
