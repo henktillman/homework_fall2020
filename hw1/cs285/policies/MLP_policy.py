@@ -38,7 +38,7 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         self.training = training
         self.nn_baseline = nn_baseline
 
-        if self.discrete:
+        if self.discrete: # all envs in this hw have continuous action spaces, so never used?
             self.logits_na = ptu.build_mlp(
                 input_size=self.ob_dim,
                 output_size=self.ac_dim,
@@ -52,6 +52,11 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
                                         self.learning_rate)
         else:
             self.logits_na = None
+            # mean_net is the network you use to output the mean of the
+            # distribution of action, and log std is the std of that
+            # distribution. so in forward function, you should return a
+            # distribution that has the mean from the output of mean_net
+            # and the scale from torch.exp(logstd).
             self.mean_net = ptu.build_mlp(
                 input_size=self.ob_dim,
                 output_size=self.ac_dim,
@@ -82,12 +87,16 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             observation = obs[None]
 
         # TODO return the action that the policy prescribes
+        # Call self.forward
+        # rsample from the distribution
         raise NotImplementedError
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
         # don't use get_action. Use self.forward, which doesn't return a numpy
         # array (so gradients can indeed flow)
+        # actually don't even implement this lol, MLPPolicy never used except
+        # as parent class.
         raise NotImplementedError
 
     # This function defines the forward pass of the network.
@@ -96,7 +105,13 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor) -> Any:
-        # perhaps normal.rsample()
+        # Should call forward on self.mean_net, then construct a distribution
+        # (look in piazza for type) using the result and the value of logstd.
+
+        # Then you have two choices. Can return dist, or sample from it with
+        # rsample()
+
+        # The FloatTensor returned would have dimension N x A
         raise NotImplementedError
 
 
@@ -113,6 +128,7 @@ class MLPPolicySL(MLPPolicy):
             self, observations, actions,
             adv_n=None, acs_labels_na=None, qvals=None
     ):
+        # adv_n and acs_labels_na are unused (maybe also qvals)
         # actions = true action (taken by the expert). Need to conver to pytorch tensor
         # pred_actions we get from calling our forward function on the observations
 
@@ -120,7 +136,7 @@ class MLPPolicySL(MLPPolicy):
         # don't use get_action. Use self.forward, which doesn't return a numpy
         # array (so gradients can indeed flow)
 
-
+        # Don't forget to set optimizer.no_grad()???
         # TODO: update the policy and return the loss
         loss = TODO
         return {

@@ -145,9 +145,9 @@ class RL_Trainer(object):
             batch_size,
     ):
         """
-        :param itr:
+        :param itr: the current iteration number
         :param load_initial_expertdata:  path to expert data pkl file
-        :param collect_policy:  the current policy using which we collect data
+        :param collect_policy:  the current policy using which we collect data (MLPPolicySL)
         :param batch_size:  the number of transitions we collect
         :return:
             paths: a list trajectories
@@ -155,6 +155,7 @@ class RL_Trainer(object):
             train_video_paths: paths which also contain videos for visualization purposes
         """
 
+        # In this section of the code, you are choosing between behavior cloning and DAgger
         # TODO decide whether to load training data or use the current policy to collect more data
         # HINT: depending on if it's the first iteration or not, decide whether to either
                 # (1) load the data. In this case you can directly return as follows
