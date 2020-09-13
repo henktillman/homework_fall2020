@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import pickle
 import numpy as np
 import time
 
@@ -147,11 +148,12 @@ class RL_Trainer(object):
         """
         :param itr: the current iteration number
         :param load_initial_expertdata:  path to expert data pkl file
-        :param collect_policy:  the current policy using which we collect data (MLPPolicySL)
+        :param collect_policy:  the current policy using which we collect data (bcagent.actor = MLPPolicySL)
         :param batch_size:  the number of transitions we collect
         :return:
-            paths: a list trajectories
-            envsteps_this_batch: the sum over the numbers of environment steps in paths
+            paths: a list of trajectories
+            envsteps_this_batch: the sum over the numbers of environment steps in paths.
+                If just loading expert data, we didn't take any environment steps :)
             train_video_paths: paths which also contain videos for visualization purposes
         """
 
@@ -167,6 +169,16 @@ class RL_Trainer(object):
         # HINT1: use sample_trajectories from utils
         # HINT2: you want each of these collected rollouts to be of length self.params['ep_len']
         print("\nCollecting data to be used for training...")
+        # If it's the first iteration, just return the expert training data
+        __import__('ipdb').set_trace()
+        if itr == 0:
+            loaded_paths = pickle.load(open(load_initial_expertdata, 'rb'))
+            return loaded_paths, 0, None
+
+
+        # TODO(DAgger)
+        # Otherwise we need to rollout our current policy to collect new observations
+        # which we can later relabel using the expert policy.
         paths, envsteps_this_batch = TODO
 
         # collect more rollouts with the same policy, to be saved as videos in tensorboard
@@ -184,16 +196,15 @@ class RL_Trainer(object):
         print('\nTraining agent using sampled data from replay buffer...')
         all_logs = []
         for train_step in range(self.params['num_agent_train_steps_per_iter']):
-
             # TODO sample some data from the data buffer
             # HINT1: use the agent's sample function
             # HINT2: how much data = self.params['train_batch_size']
-            ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = TODO
+            ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = self.agent.sample(self.params['train_batch_size'])
 
             # TODO use the sampled data to train an agent
             # HINT: use the agent's train function
             # HINT: keep the agent's training log for debugging
-            train_log = TODO
+            train_log = self.agent.train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
             all_logs.append(train_log)
         return all_logs
 
@@ -224,7 +235,7 @@ class RL_Trainer(object):
             print('\nSaving train rollouts as videos...')
             self.logger.log_paths_as_videos(train_video_paths, itr, fps=self.fps, max_videos_to_save=MAX_NVIDEO,
                                             video_title='train_rollouts')
-            self.logger.log_paths_as_videos(eval_video_paths, itr, fps=self.fps,max_videos_to_save=MAX_NVIDEO,
+            self.logger.log_paths_as_videos(eval_video_paths,  itr, fps=self.fps, max_videos_to_save=MAX_NVIDEO,
                                              video_title='eval_rollouts')
 
         # save eval metrics

@@ -85,18 +85,17 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             observation = obs
         else:
             observation = obs[None]
-
         # TODO return the action that the policy prescribes
         # Call self.forward
-        # rsample from the distribution
-        raise NotImplementedError
+        obs = ptu.from_numpy(obs)
+        obs = obs.view(-1, obs.shape[0]) # make 2d!
+        ac = self.forward(obs)
+        return ptu.to_numpy(ac)
 
     # update/train this policy
+    # don't even implement this lol, MLPPolicy class is never used except
+    # as parent class.
     def update(self, observations, actions, **kwargs):
-        # don't use get_action. Use self.forward, which doesn't return a numpy
-        # array (so gradients can indeed flow)
-        # actually don't even implement this lol, MLPPolicy never used except
-        # as parent class.
         raise NotImplementedError
 
     # This function defines the forward pass of the network.
@@ -107,13 +106,14 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     def forward(self, observation: torch.FloatTensor) -> Any:
         # Should call forward on self.mean_net, then construct a distribution
         # (look in piazza for type) using the result and the value of logstd.
+        if not self.discrete:
+            mean_tensor = self.mean_net.forward(observation)
 
         # Then you have two choices. Can return dist, or sample from it with
         # rsample()
-
+        dist = torch.distributions.normal.Normal(mean_tensor, self.logstd)
         # The FloatTensor returned would have dimension N x A
-        raise NotImplementedError
-
+        return dist.rsample()
 
 #####################################################
 #####################################################
@@ -128,17 +128,22 @@ class MLPPolicySL(MLPPolicy):
             self, observations, actions,
             adv_n=None, acs_labels_na=None, qvals=None
     ):
-        # adv_n and acs_labels_na are unused (maybe also qvals)
-        # actions = true action (taken by the expert). Need to conver to pytorch tensor
+        # adv_n, acs_labels_na, qvals are unused
+        # actions = true action (taken by the expert). Need to convert to pytorch tensor
         # pred_actions we get from calling our forward function on the observations
-
-
         # don't use get_action. Use self.forward, which doesn't return a numpy
         # array (so gradients can indeed flow)
+        pred_actions = self.forward(ptu.from_numpy(observations))
+
+        actions = ptu.from_numpy(actions)
+
 
         # Don't forget to set optimizer.no_grad()???
         # TODO: update the policy and return the loss
-        loss = TODO
+        loss = self.loss(pred_actions, actions)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
         return {
             # You can add extra logging information here, but keep this line
             'Training Loss': ptu.to_numpy(loss),
