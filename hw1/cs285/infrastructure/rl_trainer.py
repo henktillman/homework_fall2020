@@ -170,7 +170,6 @@ class RL_Trainer(object):
         # HINT2: you want each of these collected rollouts to be of length self.params['ep_len']
         print("\nCollecting data to be used for training...")
         # If it's the first iteration, just return the expert training data
-        __import__('ipdb').set_trace()
         if itr == 0:
             loaded_paths = pickle.load(open(load_initial_expertdata, 'rb'))
             return loaded_paths, 0, None
@@ -179,7 +178,7 @@ class RL_Trainer(object):
         # TODO(DAgger)
         # Otherwise we need to rollout our current policy to collect new observations
         # which we can later relabel using the expert policy.
-        paths, envsteps_this_batch = TODO
+        paths, envsteps_this_batch = utils.sample_trajectories(self.env, collect_policy, batch_size, self.params['ep_len'])
 
         # collect more rollouts with the same policy, to be saved as videos in tensorboard
         # note: here, we collect MAX_NVIDEO rollouts, each of length MAX_VIDEO_LEN
@@ -214,7 +213,8 @@ class RL_Trainer(object):
         # TODO relabel collected obsevations (from our policy) with labels from an expert policy
         # HINT: query the policy (using the get_action function) with paths[i]["observation"]
         # and replace paths[i]["action"] with these expert labels
-
+        for i in range(len(paths)):
+            paths[i]["action"] = expert_policy.get_action(paths[i]["observation"])
         return paths
 
     ####################################

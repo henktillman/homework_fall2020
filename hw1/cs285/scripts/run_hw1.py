@@ -5,6 +5,16 @@ from cs285.infrastructure.rl_trainer import RL_Trainer
 from cs285.agents.bc_agent import BCAgent
 from cs285.policies.loaded_gaussian_policy import LoadedGaussianPolicy
 
+"""
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/HalfCheetah.pkl --env_name HalfCheetah-v2 --exp_name bc_halfcheetah --n_iter 1 --expert_data cs285/expert_data/expert_data_HalfCheetah-v2.pkl --video_log_freq -1
+
+python cs285/scripts/run_hw1.py     --expert_policy_file cs285/policies/experts/Ant.pkl     --env_name Ant-v2 --exp_name dagger_ant --n_iter 10     --do_dagger --expert_data cs285/expert_data/expert_data_Ant-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+python cs285/scripts/run_hw1.py     --expert_policy_file cs285/policies/experts/HalfCheetah.pkl     --env_name HalfCheetah-v2 --exp_name dagger_HalfCheetah --n_iter 10     --do_dagger --expert_data cs285/expert_data/expert_data_HalfCheetah-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+python cs285/scripts/run_hw1.py     --expert_policy_file cs285/policies/experts/Walker2d.pkl     --env_name Walker2d-v2 --exp_name dagger_Walker2d --n_iter 10     --do_dagger --expert_data cs285/expert_data/expert_data_Walker2d-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+python cs285/scripts/run_hw1.py     --expert_policy_file cs285/policies/experts/Humanoid.pkl     --env_name Humanoid-v2 --exp_name dagger_Humanoid --n_iter 30     --do_dagger --expert_data cs285/expert_data/expert_data_Humanoid-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+"""
+
+
 class BC_Trainer(object):
 
     def __init__(self, params):
