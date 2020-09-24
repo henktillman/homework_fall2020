@@ -86,8 +86,16 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 
     # query the policy with observation(s) to get selected action(s)
     def get_action(self, obs: np.ndarray) -> np.ndarray:
-        # TODO: get this from hw1
-        return action
+        if len(obs.shape) > 1:
+            observation = obs
+        else:
+            observation = obs[None]
+        # TODO return the action that the policy prescribes
+        # Call self.forward
+        obs = ptu.from_numpy(obs)
+        obs = obs.view(-1, obs.shape[0]) # make 2d!
+        ac = self.forward(obs)
+        return ptu.to_numpy(ac)
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
@@ -99,8 +107,14 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor):
-        # TODO: get this from hw1
-        return action_distribution
+        if not self.discrete:
+            mean_tensor = self.mean_net.forward(observation)
+
+        # Then you have two choices. Can return dist, or sample from it with
+        # rsample()
+        dist = torch.distributions.normal.Normal(mean_tensor, self.logstd)
+        # The FloatTensor returned would have dimension N x A
+        return dist.rsample()
 
 
 #####################################################
@@ -139,18 +153,18 @@ class MLPPolicyPG(MLPPolicy):
 
             ## TODO: use the `forward` method of `self.baseline` to get baseline predictions
             baseline_predictions = TODO
-            
+
             ## avoid any subtle broadcasting bugs that can arise when dealing with arrays of shape
             ## [ N ] versus shape [ N x 1 ]
             ## HINT: you can use `squeeze` on torch tensors to remove dimensions of size 1
             assert baseline_predictions.shape == targets.shape
-            
-            # TODO: compute the loss that should be optimized for training the baseline MLP (`self.baseline`)
-            # HINT: use `F.mse_loss`
+
+            ## TODO: compute the loss that should be optimized for training the baseline MLP (`self.baseline`)
+            ## HINT: use `F.mse_loss`
             baseline_loss = TODO
 
-            # TODO: optimize `baseline_loss` using `self.baseline_optimizer`
-            # HINT: remember to `zero_grad` first
+            ## TODO: optimize `baseline_loss` using `self.baseline_optimizer`
+            ## HINT: remember to `zero_grad` first
             TODO
 
         train_log = {
