@@ -34,6 +34,7 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         self.n_layers = n_layers
         self.discrete = discrete
         self.size = size
+        print("SIZEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE", size)
         self.learning_rate = learning_rate
         self.training = training
         self.nn_baseline = nn_baseline

@@ -6,12 +6,18 @@ from cs285.agents.bc_agent import BCAgent
 from cs285.policies.loaded_gaussian_policy import LoadedGaussianPolicy
 
 """
-python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/HalfCheetah.pkl --env_name HalfCheetah-v2 --exp_name bc_halfcheetah --n_iter 1 --expert_data cs285/expert_data/expert_data_HalfCheetah-v2.pkl --video_log_freq -1
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/Ant.pkl --env_name Ant-v2 --exp_name bc_Ant --n_iter 1 --expert_data cs285/expert_data/expert_data_Ant-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/HalfCheetah.pkl --env_name HalfCheetah-v2 --exp_name bc_halfcheetah --n_iter 1 --expert_data cs285/expert_data/expert_data_HalfCheetah-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/Humanoid.pkl --env_name Humanoid-v2 --exp_name bc_Humanoid --n_iter 1 --expert_data cs285/expert_data/expert_data_Humanoid-v2.pkl --video_log_freq -1 --eval_batch_size 5000
 
-python cs285/scripts/run_hw1.py     --expert_policy_file cs285/policies/experts/Ant.pkl     --env_name Ant-v2 --exp_name dagger_ant --n_iter 10     --do_dagger --expert_data cs285/expert_data/expert_data_Ant-v2.pkl --video_log_freq -1 --eval_batch_size 5000
-python cs285/scripts/run_hw1.py     --expert_policy_file cs285/policies/experts/HalfCheetah.pkl     --env_name HalfCheetah-v2 --exp_name dagger_HalfCheetah --n_iter 10     --do_dagger --expert_data cs285/expert_data/expert_data_HalfCheetah-v2.pkl --video_log_freq -1 --eval_batch_size 5000
-python cs285/scripts/run_hw1.py     --expert_policy_file cs285/policies/experts/Walker2d.pkl     --env_name Walker2d-v2 --exp_name dagger_Walker2d --n_iter 10     --do_dagger --expert_data cs285/expert_data/expert_data_Walker2d-v2.pkl --video_log_freq -1 --eval_batch_size 5000
-python cs285/scripts/run_hw1.py     --expert_policy_file cs285/policies/experts/Humanoid.pkl     --env_name Humanoid-v2 --exp_name dagger_Humanoid --n_iter 30     --do_dagger --expert_data cs285/expert_data/expert_data_Humanoid-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/Ant.pkl --env_name Ant-v2 --exp_name dagger_ant --n_iter 10 --do_dagger --expert_data cs285/expert_data/expert_data_Ant-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/HalfCheetah.pkl --env_name HalfCheetah-v2 --exp_name dagger_HalfCheetah --n_iter 10 --do_dagger --expert_data cs285/expert_data/expert_data_HalfCheetah-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/Walker2d.pkl --env_name Walker2d-v2 --exp_name dagger_Walker2d --n_iter 10 --do_dagger --expert_data cs285/expert_data/expert_data_Walker2d-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/Humanoid.pkl --env_name Humanoid-v2 --exp_name dagger_Humanoid --n_iter 30 --do_dagger --expert_data cs285/expert_data/expert_data_Humanoid-v2.pkl --video_log_freq -1 --eval_batch_size 5000
+
+
+python cs285/scripts/run_hw1.py --expert_policy_file cs285/policies/experts/Ant.pkl --env_name Ant-v2 --exp_name bc_Ant --n_iter 1 --expert_data cs285/expert_data/expert_data_Ant-v2.pkl --video_log_freq -1 --eval_batch_size 5000 --num_agent_train_steps_per_iter 2000
 """
 
 
@@ -108,23 +114,57 @@ def main():
         logdir_prefix = 'q1_'
         assert args.n_iter==1, ('Vanilla behavior cloning collects expert data just once (n_iter=1)')
 
-    ## directory for logging
-    data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data')
-    if not (os.path.exists(data_path)):
-        os.makedirs(data_path)
-    logdir = logdir_prefix + args.exp_name + '_' + args.env_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S")
-    logdir = os.path.join(data_path, logdir)
-    params['logdir'] = logdir
-    if not(os.path.exists(logdir)):
-        os.makedirs(logdir)
+    parameter_sweep = False
 
+    if not parameter_sweep:
+        ## directory for logging
+        data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data')
+        if not (os.path.exists(data_path)):
+            os.makedirs(data_path)
+        logdir = logdir_prefix + args.exp_name + '_' + args.env_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S")
+        logdir = os.path.join(data_path, logdir)
+        params['logdir'] = logdir
+        if not(os.path.exists(logdir)):
+            os.makedirs(logdir)
 
-    ###################
-    ### RUN TRAINING
-    ###################
+        # Run training!
+        trainer = BC_Trainer(params)
+        trainer.run_training_loop()
+    else:
+        # parameter_name = 'n_layers'
+        # parameter_start = 2
+        # parameter_end = 10
+        # parameter_interval = 1
+        # parameter_name = 'num_agent_train_steps_per_iter'
+        # parameter_start = 1000
+        # parameter_end = 10000
+        # parameter_interval = 1000
+        parameter_name = 'size'
+        parameter_start = 1
+        parameter_end = 81
+        parameter_interval = 5
 
-    trainer = BC_Trainer(params)
-    trainer.run_training_loop()
+        while parameter_start < parameter_end:
+            print("________________________________________________")
+            print(f"Testing {parameter_name} with value {parameter_start}")
+            print("________________________________________________")
+            ## directory for logging
+            data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data')
+            if not (os.path.exists(data_path)):
+                os.makedirs(data_path)
+            logdir = logdir_prefix + args.exp_name + '_' + args.env_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S") + '_' + parameter_name + '_' + str(parameter_start)
+            logdir = os.path.join(data_path, logdir)
+            params['logdir'] = logdir
+            if not(os.path.exists(logdir)):
+                os.makedirs(logdir)
+
+            # update param
+            params[parameter_name] = parameter_start
+            parameter_start += parameter_interval
+
+            # Run training!
+            trainer = BC_Trainer(params)
+            trainer.run_training_loop()
 
 if __name__ == "__main__":
     main()
