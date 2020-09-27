@@ -2,6 +2,7 @@ import numpy as np
 
 from .base_agent import BaseAgent
 from cs285.policies.MLP_policy import MLPPolicyPG
+from cs285.infrastructure import utils
 from cs285.infrastructure.replay_buffer import ReplayBuffer
 
 
@@ -37,7 +38,6 @@ class PGAgent(BaseAgent):
             Training a PG agent refers to updating its actor using the given observations/actions
             and the calculated qvals/advantages that come from the seen rewards.
         """
-
         # step 1: calculate q values of each (s_t, a_t) point, using rewards (r_0, ..., r_t, ..., r_T)
         q_values = self.calculate_q_vals(rewards_list)
 
@@ -46,7 +46,7 @@ class PGAgent(BaseAgent):
 
         # TODO: step 3: use all datapoints (s_t, a_t, q_t, adv_t) to update the PG actor/policy
         ## HINT: `train_log` should be returned by your actor update method
-        train_log = self.actor.update(observations, actions, advantages, q_values=q_values):
+        train_log = self.actor.update(observations, actions, advantages, q_values=q_values)
 
         return train_log
 
@@ -55,7 +55,6 @@ class PGAgent(BaseAgent):
         """
             Monte Carlo estimation of the Q function.
         """
-
         # Case 1: trajectory-based PG
         # Estimate Q^{pi}(s_t, a_t) by the total discounted reward summed over entire trajectory
         if not self.reward_to_go:
@@ -82,6 +81,7 @@ class PGAgent(BaseAgent):
 
         # Estimate the advantage when nn_baseline is True,
         # by querying the neural network that you're using to learn the baseline
+
         if self.nn_baseline:
             baselines_unnormalized = self.actor.run_baseline_prediction(obs)
             ## ensure that the baseline and q_values have the same dimensionality
@@ -91,7 +91,7 @@ class PGAgent(BaseAgent):
             ## have the same mean and standard deviation as the current batch of q_values
             baselines = baselines_unnormalized * np.std(q_values) + np.mean(q_values)
             ## TODO: compute advantage estimates using q_values and baselines
-            advantages = TODO
+            advantages = q_values.copy() - baselines
 
         # Else, just set the advantage to [Q]
         else:
@@ -102,7 +102,7 @@ class PGAgent(BaseAgent):
             ## TODO: standardize the advantages to have a mean of zero
             ## and a standard deviation of one
             ## HINT: there is a `normalize` function in `infrastructure.utils`
-            advantages = TODO
+            advantages = utils.normalize(advantages, np.mean(advantages), np.std(advantages), eps=1e-8)
 
         return advantages
 
@@ -131,7 +131,9 @@ class PGAgent(BaseAgent):
         # TODO: create list_of_discounted_returns
         # Hint: note that all entries of this output are equivalent
             # because each sum is from 0 to T (and doesnt involve t)
-
+        gamma_powers = self.gamma ** np.arange(rewards.shape[0])
+        entry = np.dot(rewards, gamma_powers)
+        list_of_discounted_returns = np.full(shape=rewards.shape[0], fill_value=entry)
         return list_of_discounted_returns
 
     def _discounted_cumsum(self, rewards):
@@ -146,6 +148,15 @@ class PGAgent(BaseAgent):
             # because the summation happens over [t, T] instead of [0, T]
         # HINT2: it is possible to write a vectorized solution, but a solution
             # using a for loop is also fine
+        list_of_discounted_cumsums = np.zeros(rewards.shape[0])
+        gamma_powers = self.gamma ** np.arange(rewards.shape[0])
+        for i in range(rewards.shape[0]):
+            remaining_rewards = rewards[i:]
+            if i == 0:
+                remaining_gammas = gamma_powers
+            else:
+                remaining_gammas = gamma_powers[:-i]
+            list_of_discounted_cumsums[i] = np.dot(remaining_rewards, remaining_gammas)
 
         return list_of_discounted_cumsums
 

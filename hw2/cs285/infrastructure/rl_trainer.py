@@ -114,6 +114,7 @@ class RL_Trainer(object):
                 self.logvideo = True
             else:
                 self.logvideo = False
+            self.log_video = self.logvideo
 
             # decide if metrics should be logged
             if self.params['scalar_log_freq'] == -1:
@@ -148,7 +149,7 @@ class RL_Trainer(object):
     ####################################
     ####################################
 
-    def collect_training_trajectories(self, itr, initial_expertdata, collect_policy, num_transitions_to_sample, save_expert_data_to_disk=False):
+    def collect_training_trajectories(self, itr, load_initial_expertdata, collect_policy, batch_size):
         """
         :param itr: the current iteration number
         :param load_initial_expertdata:  path to expert data pkl file
@@ -163,10 +164,9 @@ class RL_Trainer(object):
 
         print("\nCollecting data to be used for training...")
         # If it's the first iteration, just return the expert training data
-        # Note: Don't do this for hw2 because there's no expert training data
-        # if itr == 0:
-        #     loaded_paths = pickle.load(open(load_initial_expertdata, 'rb'))
-        #     return loaded_paths, 0, None
+        if itr == 0 and load_initial_expertdata is not None:
+            loaded_paths = pickle.load(open(load_initial_expertdata, 'rb'))
+            return loaded_paths, 0, None
 
 
         # TODO(DAgger)
@@ -183,6 +183,7 @@ class RL_Trainer(object):
             train_video_paths = utils.sample_n_trajectories(self.env, collect_policy, MAX_NVIDEO, MAX_VIDEO_LEN, True)
 
         return paths, envsteps_this_batch, train_video_paths
+
 
     def train_agent(self):
         print('\nTraining agent using sampled data from replay buffer...')

@@ -9,6 +9,7 @@ import torch
 from torch import distributions
 
 from cs285.infrastructure import pytorch_util as ptu
+from cs285.infrastructure import utils
 from cs285.policies.base_policy import BasePolicy
 
 
@@ -82,6 +83,14 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     def save(self, filepath):
         torch.save(self.state_dict(), filepath)
 
+    # def share_memory(self):
+    #     if self.discrete:
+    #         self.logits_na.share_memory()
+    #     else:
+    #         self.mean_net.share_memory()
+    #         self.logstd.share_memory()
+
+
     ##################################
 
     # query the policy with observation(s) to get selected action(s)
@@ -94,7 +103,7 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         # Call self.forward
         obs = ptu.from_numpy(obs)
         obs = obs.view(-1, obs.shape[0]) # make 2d!
-        ac = self.forward(obs)
+        ac = self.forward(obs).sample()
         return ptu.to_numpy(ac)
 
     # update/train this policy
@@ -107,14 +116,20 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor):
-        if not self.discrete:
-            mean_tensor = self.mean_net.forward(observation)
-
-        # Then you have two choices. Can return dist, or sample from it with
-        # rsample()
-        dist = torch.distributions.normal.Normal(mean_tensor, self.logstd)
-        # The FloatTensor returned would have dimension N x A
-        return dist.rsample()
+        if self.discrete:
+            logits = self.logits_na.forward(observation)
+            action_distribution = distributions.Categorical(logits=logits)
+            return action_distribution
+        else:
+            batch_mean = self.mean_net.forward(observation)
+            scale_tril = torch.diag(torch.exp(self.logstd))
+            batch_dim = batch_mean.shape[0]
+            batch_scale_tril = scale_tril.repeat(batch_dim, 1, 1)
+            action_distribution = distributions.MultivariateNormal(
+                batch_mean,
+                scale_tril=batch_scale_tril,
+            )
+            return action_distribution
 
 
 #####################################################
@@ -138,21 +153,24 @@ class MLPPolicyPG(MLPPolicy):
         # HINT2: you will want to use the `log_prob` method on the distribution returned
             # by the `forward` method
         # HINT3: don't forget that `optimizer.step()` MINIMIZES a loss
-
-        loss = TODO
+        dist = self.forward(observations)
+        log_prob = dist.log_prob(actions)
+        loss = -(log_prob * advantages).sum()
 
         # TODO: optimize `loss` using `self.optimizer`
         # HINT: remember to `zero_grad` first
-        TODO
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         if self.nn_baseline:
             ## TODO: normalize the q_values to have a mean of zero and a standard deviation of one
             ## HINT: there is a `normalize` function in `infrastructure.utils`
-            targets = TODO
+            targets = utils.normalize(q_values, np.mean(q_values), np.std(q_values), eps=1e-8)
             targets = ptu.from_numpy(targets)
 
             ## TODO: use the `forward` method of `self.baseline` to get baseline predictions
-            baseline_predictions = TODO
+            baseline_predictions = self.baseline.forward(observations).squeeze()
 
             ## avoid any subtle broadcasting bugs that can arise when dealing with arrays of shape
             ## [ N ] versus shape [ N x 1 ]
@@ -161,11 +179,13 @@ class MLPPolicyPG(MLPPolicy):
 
             ## TODO: compute the loss that should be optimized for training the baseline MLP (`self.baseline`)
             ## HINT: use `F.mse_loss`
-            baseline_loss = TODO
+            baseline_loss = self.baseline_loss(baseline_predictions, targets)
 
             ## TODO: optimize `baseline_loss` using `self.baseline_optimizer`
             ## HINT: remember to `zero_grad` first
-            TODO
+            self.baseline_optimizer.zero_grad()
+            baseline_loss.backward()
+            self.baseline_optimizer.step()
 
         train_log = {
             'Training Loss': ptu.to_numpy(loss),

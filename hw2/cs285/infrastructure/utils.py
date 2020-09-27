@@ -1,6 +1,11 @@
 import numpy as np
 import time
+import torch
+import torch.multiprocessing as mp
+import multiprocessing
 import copy
+import gym
+from gym import wrappers
 
 ############################################
 ############################################
@@ -109,15 +114,107 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
         Hint1: use sample_trajectory to get each path (i.e. rollout) that goes into paths
         Hint2: use get_pathlength to count the timesteps collected in each path
     """
-    timesteps_this_batch = 0
-    paths = []
-    while timesteps_this_batch < min_timesteps_per_batch:
 
-        new_path = sample_trajectory(env, policy, max_path_length, render, render_mode)
-        paths.append(new_path)
-        timesteps_this_batch += get_pathlength(new_path)
 
-    return paths, timesteps_this_batch
+    # def extractor_worker(done_queue):
+    #     done_queue.put((np.zeros(10), np.zeros(11)))
+    #     print("Done!")
+
+    # producers = []
+    # done_queue = mp.Queue()
+    # for i in range(5):
+    #     process = mp.Process(target=extractor_worker,
+    #                          args=(done_queue,))
+    #     process.start()
+    #     producers.append(process)
+
+    # __import__('ipdb').set_trace()
+    # [p.join() for p in producers]
+
+    # done = mp.Event()
+
+
+    def sample_helper(index, pol, mtpb, paths_queue, timestep_queue):
+        # np.random.seed(index+1+np.random.randint(1000, 2000))
+        # torch.manual_seed(index+1+np.random.randint(1000, 2000))
+        np.random.seed(index)
+        torch.manual_seed(index)
+        # env = gym.make("CartPole-v0").unwrapped
+        # env = gym.make("LunarLanderContinuous-v2").unwrapped
+        timesteps_this_batch = 0
+        paths = []
+        while timesteps_this_batch < mtpb:
+            # print(index, timesteps_this_batch)
+            new_path = sample_trajectory(env, pol, max_path_length, render, render_mode)
+
+            paths_queue.put(new_path)
+            timesteps_this_batch += get_pathlength(new_path)
+        # paths_queue.put(paths)
+        timestep_queue.put(timesteps_this_batch)
+        paths_queue.put(None)
+        # print(index, "done!")
+
+    # min_timesteps_per_batch = 1000
+    num_processes = 8
+
+    paths_queue = mp.Queue()
+    timestep_queue = mp.Queue()
+    # queues = []
+    t0 = time.time()
+
+    total_paths = []
+    if num_processes < 2:
+        # q = []
+        sample_helper(0, policy, min_timesteps_per_batch, paths_queue, timestep_queue)
+        # queues.append(q)
+        num_processes_done = 0
+
+        while num_processes_done < num_processes:
+            elem = paths_queue.get()
+            if elem is None:
+                num_processes_done += 1
+            else:
+                total_paths.append(elem)
+    else:
+        policy.share_memory()
+
+        processes = []
+
+        for i in range(num_processes):
+            # q = []
+            # q = multiprocessing.Queue()
+            # __import__('ipdb').set_trace()
+            p = mp.Process(target=sample_helper, args=(i, policy, min_timesteps_per_batch//num_processes, paths_queue, timestep_queue))
+            p.start()
+            # queues.append(q)
+            processes.append(p)
+
+        num_processes_done = 0
+
+        while num_processes_done < num_processes:
+            elem = paths_queue.get()
+            if elem is None:
+                num_processes_done += 1
+            else:
+                total_paths.append(elem)
+
+        for p in processes:
+            p.join()
+
+    total_timesteps = 0
+    while not timestep_queue.empty():
+        total_timesteps += timestep_queue.get()
+    # total_paths = []
+    t1 = time.time()
+    print("time elapsed: ", t1 - t0)
+
+    # while not paths_queue.empty():
+    #     total_paths.extend(timestep_queue.get())
+    # for q in queues:
+    #     total_paths.extend(q)
+
+    return total_paths, total_timesteps
+
 
 def sample_n_trajectories(env, policy, ntraj, max_path_length, render=False, render_mode=('rgb_array')):
     """

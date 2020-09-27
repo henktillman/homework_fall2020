@@ -67,12 +67,12 @@ def main():
 
     parser.add_argument('--num_agent_train_steps_per_iter', type=int, default=1)
     parser.add_argument('--discount', type=float, default=1.0)
-    parser.add_argument('--learning_rate', '-lr', type=float, default=5e-3)
-    parser.add_argument('--n_layers', '-l', type=int, default=2)
+    parser.add_argument('--learning_rate', '-lr', type=float, default=1e-3)
+    parser.add_argument('--n_layers', '-l', type=int, default=3)
     parser.add_argument('--size', '-s', type=int, default=64)
 
     parser.add_argument('--ep_len', type=int) #students shouldn't change this away from env's default
-    parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--seed', type=int, default=3)
     parser.add_argument('--no_gpu', '-ngpu', action='store_true')
     parser.add_argument('--which_gpu', '-gpu_id', default=0)
     parser.add_argument('--video_log_freq', type=int, default=-1)
@@ -108,7 +108,10 @@ def main():
     ###################
 
     trainer = PG_Trainer(params)
+    t0 = time.time()
     trainer.run_training_loop()
+    t1 = time.time()
+    print("total training time: ", t1 - t0)
 
 
 if __name__ == "__main__":
