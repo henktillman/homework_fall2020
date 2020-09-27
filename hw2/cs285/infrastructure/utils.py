@@ -155,7 +155,7 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
         # print(index, "done!")
 
     # min_timesteps_per_batch = 1000
-    num_processes = 8
+    num_processes = 1
 
     paths_queue = mp.Queue()
     timestep_queue = mp.Queue()
