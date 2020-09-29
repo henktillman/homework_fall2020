@@ -155,7 +155,8 @@ class MLPPolicyPG(MLPPolicy):
         # HINT3: don't forget that `optimizer.step()` MINIMIZES a loss
         dist = self.forward(observations)
         log_prob = dist.log_prob(actions)
-        loss = -(log_prob * advantages).sum()
+        # loss = -(log_prob * advantages).sum(axis=-1).mean()
+        loss = -(log_prob * advantages).mean()
 
         # TODO: optimize `loss` using `self.optimizer`
         # HINT: remember to `zero_grad` first
@@ -166,7 +167,7 @@ class MLPPolicyPG(MLPPolicy):
         if self.nn_baseline:
             ## TODO: normalize the q_values to have a mean of zero and a standard deviation of one
             ## HINT: there is a `normalize` function in `infrastructure.utils`
-            targets = utils.normalize(q_values, np.mean(q_values), np.std(q_values), eps=1e-8)
+            targets = utils.normalize(q_values, np.mean(q_values), np.std(q_values))
             targets = ptu.from_numpy(targets)
 
             ## TODO: use the `forward` method of `self.baseline` to get baseline predictions
