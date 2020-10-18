@@ -39,7 +39,7 @@ def register_custom_envs():
 def get_env_kwargs(env_name):
     if env_name in ['MsPacman-v0', 'PongNoFrameskip-v4']:
         kwargs = {
-            'learning_starts': 50000, # CHANGE MEEEEE
+            'learning_starts': 1000, #50000, # CHANGE MEEEEE
             'target_update_freq': 10000,
             'replay_buffer_size': int(1e6),
             'num_timesteps': int(2e8),
