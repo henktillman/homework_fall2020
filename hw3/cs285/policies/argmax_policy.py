@@ -17,4 +17,4 @@ class ArgMaxPolicy(object):
         actions = self.critic.qa_values(obs)
 
         # Add squeeze here if necessary
-        return actions.argmax()
+        return actions.argmax().squeeze()
