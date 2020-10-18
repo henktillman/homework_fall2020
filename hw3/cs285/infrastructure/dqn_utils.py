@@ -39,7 +39,7 @@ def register_custom_envs():
 def get_env_kwargs(env_name):
     if env_name in ['MsPacman-v0', 'PongNoFrameskip-v4']:
         kwargs = {
-            'learning_starts': 50000,
+            'learning_starts': 50000, # CHANGE MEEEEE
             'target_update_freq': 10000,
             'replay_buffer_size': int(1e6),
             'num_timesteps': int(2e8),
@@ -99,6 +99,8 @@ class Ipdb(nn.Module):
 
 class PreprocessAtari(nn.Module):
     def forward(self, x):
+        if x.dim() == 3:
+            x = x.unsqueeze(0)
         x = x.permute(0, 3, 1, 2).contiguous()
         return x / 255.
 
@@ -340,7 +342,7 @@ class MemoryOptimizedReplayBuffer(object):
     def __init__(self, size, frame_history_len, lander=False):
         """This is a memory efficient implementation of the replay buffer.
 
-        The sepecific memory optimizations use here are:
+        The specific memory optimizations use here are:
             - only store each frame once rather than k times
               even if every observation normally consists of k last frames
             - store frames as np.uint8 (actually it is most time-performance
@@ -348,7 +350,7 @@ class MemoryOptimizedReplayBuffer(object):
               time)
             - store frame_t and frame_(t+1) in the same buffer.
 
-        For the tipical use case in Atari Deep RL buffer with 1M frames the total
+        For the typical use case in Atari Deep RL buffer with 1M frames the total
         memory footprint of this buffer is 10^6 * 84 * 84 bytes ~= 7 gigabytes
 
         Warning! Assumes that returning frame of zeros at the beginning
