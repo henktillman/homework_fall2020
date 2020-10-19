@@ -36,7 +36,7 @@ def register_custom_envs():
         )
 
 
-def get_env_kwargs(env_name, lander_final_lr=0.02):
+def get_env_kwargs(env_name, lander_final_epsilon=0.02, lander_final_lr=1e-3):
     if env_name in ['MsPacman-v0', 'PongNoFrameskip-v4']:
         kwargs = {
             'learning_starts': 50000, # CHANGE MEEEEE
@@ -58,7 +58,7 @@ def get_env_kwargs(env_name, lander_final_lr=0.02):
         def lunar_empty_wrapper(env):
             return env
         kwargs = {
-            'optimizer_spec': lander_optimizer(),
+            'optimizer_spec': lander_optimizer(lander_final_lr=lander_final_lr),
             'q_func': create_lander_q_network,
             'replay_buffer_size': 50000,
             'batch_size': 32,
@@ -72,7 +72,7 @@ def get_env_kwargs(env_name, lander_final_lr=0.02):
             'num_timesteps': 500000,
             'env_wrappers': lunar_empty_wrapper
         }
-        kwargs['exploration_schedule'] = lander_exploration_schedule(kwargs['num_timesteps'], lander_final_lr)
+        kwargs['exploration_schedule'] = lander_exploration_schedule(kwargs['num_timesteps'], lander_final_epsilon)
 
     else:
         raise NotImplementedError
@@ -160,22 +160,23 @@ def atari_optimizer(num_timesteps):
     )
 
 
-def lander_optimizer():
+def lander_optimizer(lander_final_lr=1e-3):
+    print("LANDER FINAL LR", lander_final_lr)
     return OptimizerSpec(
         constructor=optim.Adam,
         optim_kwargs=dict(
             lr=1,
         ),
-        learning_rate_schedule=lambda epoch: 1e-3,  # keep init learning rate
+        learning_rate_schedule=lambda epoch: lander_final_lr,  # keep init learning rate
     )
 
 
-def lander_exploration_schedule(num_timesteps, lander_final_lr):
+def lander_exploration_schedule(num_timesteps, lander_final_epsilon):
     return PiecewiseSchedule(
         [
             (0, 1),
-            (num_timesteps * 0.1, lander_final_lr),
-        ], outside_value=lander_final_lr
+            (num_timesteps * 0.1, lander_final_epsilon),
+        ], outside_value=lander_final_epsilon
     )
 
 

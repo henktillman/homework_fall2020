@@ -18,7 +18,7 @@ class Q_Trainer(object):
             'double_q': params['double_q'],
         }
 
-        env_args = get_env_kwargs(params['env_name'], lander_final_lr=params['lander_final_lr'])
+        env_args = get_env_kwargs(params['env_name'], lander_final_epsilon=params['lander_final_epsilon'], lander_final_lr=params['lander_final_lr'])
 
         self.agent_params = {**train_args, **env_args, **params}
 
@@ -61,7 +61,8 @@ def main():
     parser.add_argument('--which_gpu', '-gpu_id', default=0)
     parser.add_argument('--scalar_log_freq', type=int, default=int(1e4))
     parser.add_argument('--video_log_freq', type=int, default=-1)
-    parser.add_argument('--lander_final_lr', type=float, default=0.02)
+    parser.add_argument('--lander_final_epsilon', type=float, default=0.02)
+    parser.add_argument('--lander_final_lr', type=float, default=1e-3)
 
     parser.add_argument('--save_params', action='store_true')
 
