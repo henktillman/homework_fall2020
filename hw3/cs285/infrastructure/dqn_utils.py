@@ -36,13 +36,13 @@ def register_custom_envs():
         )
 
 
-def get_env_kwargs(env_name):
+def get_env_kwargs(env_name, lander_final_lr=0.02):
     if env_name in ['MsPacman-v0', 'PongNoFrameskip-v4']:
         kwargs = {
             'learning_starts': 50000, # CHANGE MEEEEE
             'target_update_freq': 10000,
             'replay_buffer_size': int(1e6),
-            'num_timesteps': int(2e8),
+            'num_timesteps': int(1e6),
             'q_func': create_atari_q_network,
             'learning_freq': 4,
             'grad_norm_clipping': 10,
@@ -72,7 +72,7 @@ def get_env_kwargs(env_name):
             'num_timesteps': 500000,
             'env_wrappers': lunar_empty_wrapper
         }
-        kwargs['exploration_schedule'] = lander_exploration_schedule(kwargs['num_timesteps'])
+        kwargs['exploration_schedule'] = lander_exploration_schedule(kwargs['num_timesteps'], lander_final_lr)
 
     else:
         raise NotImplementedError
@@ -170,12 +170,12 @@ def lander_optimizer():
     )
 
 
-def lander_exploration_schedule(num_timesteps):
+def lander_exploration_schedule(num_timesteps, lander_final_lr):
     return PiecewiseSchedule(
         [
             (0, 1),
-            (num_timesteps * 0.1, 0.02),
-        ], outside_value=0.02
+            (num_timesteps * 0.1, lander_final_lr),
+        ], outside_value=lander_final_lr
     )
 
 
