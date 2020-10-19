@@ -128,6 +128,18 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 
 class MLPPolicyAC(MLPPolicy):
     def update(self, observations, actions, adv_n=None):
+        observations = ptu.from_numpy(observations)
+        actions = ptu.from_numpy(actions)
+        adv_n = ptu.from_numpy(adv_n) if adv_n is not None else None
         # TODO: update the policy and return the loss
-        loss = TODO
+        dist = self.forward(observations)
+        log_prob = dist.log_prob(actions)
+        if adv_n is not None:
+            loss = -(log_prob * adv_n).mean()
+        else:
+            loss = -(log_prob).mean()
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
         return loss.item()
