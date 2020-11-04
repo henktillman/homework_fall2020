@@ -67,48 +67,6 @@ def plot_lines(xs, y_lines, line_names, title, xaxis='Iteration', yaxis='Reward'
 
 
 pwd = "/Users/henktillman/Dropbox/Berkeley/8/cs285/hw/hw3/final_data/"
-fields = ['Eval_AverageReturn', 'Eval_StdReturn']
-
-
-# Experiment 1
-
-# fields = ['Eval_AverageReturn', 'Eval_StdReturn']
-# folder = "/"
-
-# header1 = "q1_sb_"
-# header2 = "q1_lb_"
-
-# contents = os.listdir(pwd + folder)
-
-
-# graph1_logs = []
-# graph2_logs = []
-# for item in contents:
-#     if header1 in item or header2 in item:
-#         logname = pwd+folder+"/"+item+"/"+os.listdir(pwd+folder+item)[0]
-#     if header1 in item:
-#         graph1_logs.append((item, logname))
-#     elif header2 in item:
-#         graph2_logs.append((item, logname))
-
-# graph1_logs.sort(key=lambda x: x[0])
-# graph2_logs.sort(key=lambda x: x[0])
-
-# graph1_data = [
-#     [
-#         get_eval_results(log[1], field) for field in fields
-#     ] for log in graph1_logs
-# ]
-# plot_lines(np.arange(len(graph1_data[0][0])), graph1_data, [log[0] for log in graph1_logs], title="Experiment 1 Small Batch Learning Curves")
-
-# graph2_data = [
-#     [
-#         get_eval_results(log[1], field) for field in fields
-#     ] for log in graph2_logs
-# ]
-# plot_lines(np.arange(len(graph2_data[0][0])), graph2_data, [log[0] for log in graph2_logs], title="Experiment 1 Large Batch Learning Curves")
-
-################################################################################
 
 # Experiment 1
 
