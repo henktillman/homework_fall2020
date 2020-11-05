@@ -58,10 +58,9 @@ class MPCPolicy(BasePolicy):
         # calculate mean_across_ensembles(predicted rewards)
         predicted_rewards = np.mean(
             predicted_sum_of_rewards_per_model, axis=0)  # [ens, N] --> N
-
         # pick the action sequence and return the 1st element of that sequence
-        best_action_sequence = None  # TODO (Q2)
-        action_to_take = None  # TODO (Q2)
+        best_action_sequence = candidate_action_sequences[np.argmax(predicted_rewards)]
+        action_to_take = best_action_sequence[0]  # TODO (Q2)
         return action_to_take[None]  # Unsqueeze the first index
 
     def calculate_sum_of_rewards(self, obs, candidate_action_sequences, model):
@@ -80,13 +79,27 @@ class MPCPolicy(BasePolicy):
         sum_of_rewards = None  # TODO (Q2)
         # For each candidate action sequence, predict a sequence of
         # states for each dynamics model in your ensemble.
+        N, H = candidate_action_sequences.shape[0:2]
+        obs_list = [np.tile(obs, (N, 1))]
+        for i in range(H):
+            next_obs = model.get_prediction(
+                obs_list[-1],
+                candidate_action_sequences[:, i, :],
+                self.data_statistics
+            )
+            obs_list.append(next_obs)
         # Once you have a sequence of predicted states from each model in
         # your ensemble, calculate the sum of rewards for each sequence
         # using `self.env.get_reward(predicted_obs)`
+        rewards_list = []
+        for i in range(H):
+            rws, _ = self.env.get_reward(obs_list[i], candidate_action_sequences[:, i, :])
+            rewards_list.append(rws)
         # You should sum across `self.horizon` time step.
         # Hint: you should use model.get_prediction and you shouldn't need
         #       to import pytorch in this file.
         # Hint: Remember that the model can process observations and actions
         #       in batch, which can be much faster than looping through each
         #       action sequence.
+        sum_of_rewards = sum(rewards_list)
         return sum_of_rewards

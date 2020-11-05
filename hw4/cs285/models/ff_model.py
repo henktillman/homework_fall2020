@@ -141,11 +141,13 @@ class FFModel(nn.Module, BaseModel):
         # `data_statistics['delta_std']`, which keep track of the mean
         # and standard deviation of the model.
         target = normalize(
-            observations - next_observations,
+            next_observations - observations,
             data_statistics['delta_mean'],
             data_statistics['delta_std']
         )
 
+        # Hint: `self(...)` returns a tuple, but you only need to use one of the
+        # outputs.
         _, deltas = self(
             observations,
             actions,
@@ -159,8 +161,6 @@ class FFModel(nn.Module, BaseModel):
 
         # TODO(Q1) compute the loss
         loss = self.loss(deltas, ptu.from_numpy(target))
-        # Hint: `self(...)` returns a tuple, but you only need to use one of the
-        # outputs.
 
         self.optimizer.zero_grad()
         loss.backward()
